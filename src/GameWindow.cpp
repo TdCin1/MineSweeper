@@ -3,35 +3,15 @@
 using namespace std;
 
 GameWindow::GameWindow(int num_row, int num_col, int mines) {
-    srand(time(0));
     rowCount = num_row;
     colCount = num_col;
     mineCount = mines;
     flagCount = mines;
 
-    sf::Texture& zero = textureMap["zero"];
-    zero.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(0, 0, 21, 32));
-    sf::Texture& one= textureMap["one"];
-    one.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(21, 0, 21, 32));
-    sf::Texture& two= textureMap["two"];
-    two.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(42, 0, 21, 32));
-    sf::Texture& three= textureMap["three"];
-    three.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(63, 0, 21, 32));
-    sf::Texture& four= textureMap["four"];
-    four.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(84, 0, 21, 32));
-    sf::Texture& five= textureMap["five"];
-    five.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(105, 0, 21, 32));
-    sf::Texture& six= textureMap["six"];
-    six.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(126, 0, 21, 32));
-    sf::Texture& seven= textureMap["seven"];
-    seven.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(147, 0, 21, 32));
-    sf::Texture& eight= textureMap["eight"];
-    eight.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(168, 0, 21, 32));
-    sf::Texture& nine= textureMap["nine"];
-    nine.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(189, 0, 21, 32));
-    sf::Texture& dash= textureMap["dash"];
-    dash.loadFromFile("C:/Users/Landon Agic/CLionProjects/MineSweeper/files/images/digits.png",sf::IntRect(210, 0, 21, 32));
+    displayWindow = new sf::RenderWindow(sf::VideoMode((colCount * 32), (rowCount * 32) + 100), "Welcome Window");
 
+    SetUpTextures();
+    SetUpElements();
 }
 
 sf::Texture& GameWindow::getTexture(const string& filename, const string& key) {
@@ -43,6 +23,7 @@ sf::Texture& GameWindow::getTexture(const string& filename, const string& key) {
 sf::Sprite& GameWindow::getSpriteFile(const std::string &filename, const std::string &key, float x, float y) {
     sf::Texture& texture = getTexture(filename,key);
     sf::Sprite& sprite = spriteMap[key];
+    sprite.setTexture(texture);
     sprite.setTexture(texture);
     sf::FloatRect Rect = sprite.getLocalBounds();
     sprite.setOrigin(Rect.left + Rect.width/2.0f, Rect.top + Rect.height/2.0f);
@@ -106,7 +87,7 @@ void GameWindow::setupTileNums() {
 }
 
 void GameWindow::displayNumber(Tile* tile) {
-    if(!gameLost) {
+    if(!gameLost && !gameWon &&!isPaused) {
         if (tile->texture != "flag") {
             if (!tile->touched) {
                 tile->touched = true;
@@ -147,25 +128,34 @@ void GameWindow::displayNumber(Tile* tile) {
 }
 
 void GameWindow::flag(GameWindow::Tile *tile) {
-    if(!gameLost) {
+    bool done = false;
+    if(!gameLost && !isPaused) {
         if (tile->texture == "flag") {
             changeTexturePointer(tile, "tile_hidden");
             tile->texture = "tile_hidden";
             flagCount++;
-            return;
+            done = true;
         }
 
-        if (tile->texture == "tile_hidden") {
+        else if (tile->texture == "tile_hidden" && !done) {
             changeTexturePointer(tile, "flag");
             tile->texture = "flag";
             flagCount--;
         }
+
+        checkWin();
+        if(gameWon){
+            return;
+        }
     }
-    cout<<flagCount;
 }
 
 void GameWindow::setTimeTextures(sf::Sprite &minuteTens, sf::Sprite &minuteOnes, sf::Sprite &secondTens,
                                  sf::Sprite &secondsOnes, int time) {
+    if(isPaused){
+
+    }
+
     if(time<=9){
         secondsOnes.setTexture(getTimeTexture(time));
         secondTens.setTexture(getTimeTexture(0));
@@ -202,13 +192,13 @@ void GameWindow::setTimeTextures(sf::Sprite &minuteTens, sf::Sprite &minuteOnes,
     }
 }
 void GameWindow::flagCounter(sf::Sprite &negative, sf::Sprite& hundreds, sf::Sprite &tens, sf::Sprite &ones, int count) {
+    if(flagCount>= 0){
+        sf::Texture texture;
+        negative.setTexture(texture);
+    }
     if(flagCount<0){
         negative.setTexture(textureMap["dash"]);
         count = abs(count);
-    }
-    else{
-        sf::Texture texture;
-        negative.setTexture(texture);
     }
     if(count<=9){
         hundreds.setTexture(getTimeTexture(0));
@@ -233,7 +223,6 @@ void GameWindow::flagCounter(sf::Sprite &negative, sf::Sprite& hundreds, sf::Spr
         tens.setTexture(getTimeTexture(ten));
         ones.setTexture(getTimeTexture(one));
     }
-
 }
 
 sf::Texture& GameWindow::getTimeTexture(int num) {
@@ -258,4 +247,305 @@ sf::Texture& GameWindow::getTimeTexture(int num) {
     else if(num == 9)
         return textureMap["nine"];
 
+}
+
+void GameWindow::checkWin() {
+    bool allRevealed = true;
+    for(int i=0;i<tileVect.size();i++){
+        if(tileVect.at(i).texture == "tile_hidden" && !tileVect.at(i).isMine){
+            allRevealed = false;
+        }
+    }
+    gameWon = allRevealed;
+    if(gameWon) {
+        for (int i = 0; i < tileVect.size(); i++) {
+            if(tileVect.at(i).isMine){
+                changeTexture(tileVect.at(i),"flag");
+            }
+        }
+    }
+}
+
+sf::Vector2i GameWindow::getMousePosition() {
+    sf::Vector2i mousePosition = sf::Mouse::getPosition(*displayWindow);
+    return mousePosition;
+}
+
+int GameWindow::Time(){
+    if(firstRun){
+        firstRun = false;
+        pause = std::chrono::high_resolution_clock::now();
+        start = std::chrono::high_resolution_clock::now();
+    }
+    if(isPaused){
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+        return timeChanged;
+    }
+    else{
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start );
+        timeChanged = duration.count();
+        pause = std::chrono::high_resolution_clock::now();
+        return timeChanged;
+    }
+
+}
+
+void GameWindow::Reset() {
+
+    firstRun = true;
+    isPaused = true;
+    timeFinal= 0;
+    timeChanged = 0;
+    gameLost = false;
+    gameWon = false;
+    flagCount = mineCount;
+
+    spriteMap.clear();
+    tileVect.clear();
+
+    SetUpElements();
+
+}
+
+void GameWindow::SetUpElements() {
+
+    //SETTING UP STARTING SPRITES
+    sf::Sprite& face_happy = getSpriteFile("../files/images/face_happy.png",
+                                           "face_happy", ((colCount/2)*32)-32, 32*(rowCount+.5)+32);
+    sf::Sprite& debug = getSpriteFile("../files/images/debug.png",
+                                      "debug", (colCount*32)-304, 32*(rowCount+.5)+32);
+    sf::Sprite& leaderboard = getSpriteFile("../files/images/leaderboard.png",
+                                            "leaderboard", (colCount*32)-176,32*(rowCount+.5)+32);
+    sf::Sprite& play = getSpriteFile("../files/images/play.png",
+                                      "play", (colCount*32)-240, 32*(rowCount+.5)+32);
+
+
+    //TIME SPRITES
+    sf::Sprite& timeSecondTen = spriteMap["timeSecondTen"];
+    sf::FloatRect Rect = timeSecondTen.getLocalBounds();
+    timeSecondTen.setOrigin(Rect.left + Rect.width/2.0f, Rect.top + Rect.height/2.0f);
+    timeSecondTen.setPosition((colCount*32)-54,32*(rowCount+.5)+16);
+
+    sf::Sprite& timeSecondOne = spriteMap["timeSecondOne"];
+    timeSecondOne.setOrigin(Rect.left + Rect.width/2.0f, Rect.top + Rect.height/2.0f);
+    timeSecondOne.setPosition((colCount*32)-33,32*(rowCount+.5)+16);
+
+    sf::Sprite& timeMinuteTen = spriteMap["timeMinuteTen"];
+    timeMinuteTen.setOrigin(Rect.left + Rect.width/2.0f, Rect.top + Rect.height/2.0f);
+    timeMinuteTen.setPosition((colCount*32)-97,32*(rowCount+.5)+16);
+
+    sf::Sprite& timeMinuteOne = spriteMap["timeMinuteOne"];
+    timeMinuteOne.setOrigin(Rect.left + Rect.width/2.0f, Rect.top + Rect.height/2.0f);
+    timeMinuteOne.setPosition((colCount*32)-76,32*(rowCount+.5)+16);
+
+    //FLAG COUNTER
+
+    sf::Sprite& flagCounterHundred= spriteMap["flagCounterHundred"];
+    flagCounterHundred.setOrigin(Rect.left + Rect.width/2.0f, Rect.top + Rect.height/2.0f);
+    flagCounterHundred.setPosition(33,32*(rowCount+.5)+16);
+
+    sf::Sprite& flagCounterTen= spriteMap["flagCounterTen"];
+    flagCounterTen.setOrigin(Rect.left + Rect.width/2.0f, Rect.top + Rect.height/2.0f);
+    flagCounterTen.setPosition(54,32*(rowCount+.5)+16);
+
+    sf::Sprite& flagCounterOne= spriteMap["flagCounterOne"];
+    flagCounterOne.setOrigin(Rect.left + Rect.width/2.0f, Rect.top + Rect.height/2.0f);
+    flagCounterOne.setPosition(75,32*(rowCount+.5)+16);
+
+    sf::Sprite& flagCounterNegative= spriteMap["flagCounterNegative"];
+    flagCounterNegative.setOrigin(Rect.left + Rect.width/2.0f, Rect.top + Rect.height/2.0f);
+    flagCounterNegative.setPosition(12,32*(rowCount+.5)+16);
+    flagCounterNegative.setTexture(textureMap["dash"]);
+
+    //TILES
+    for(int i = 0;i<rowCount;i++){
+        for(int j = 0;j<colCount;j++){
+            GameWindow::Tile tile = getSpriteText(textureMap["tile_hidden"],16+(32*j),16+(32*i));
+            tile.texture = "tile_hidden";
+            tileVect.push_back(tile);
+        }
+    }
+    //SET ROWS AND COLS FOR TILES
+    for(int i =0;i<tileVect.size();i++){
+        int row = i/colCount;
+        int rowStart = (((row+1)*colCount)-(colCount-1))-1;
+        int col = i - rowStart;
+        tileVect.at(i).row = row;
+        tileVect.at(i).col = col;
+    }
+
+
+    //SETS HANDLES NEIGHBORS
+    for(int row = 0;row<rowCount;row++){
+        for(int col = 0; col<colCount;col++){
+            GameWindow::Tile* currentTile = &getTile(row,col);
+            //TOP
+            if(row==0){
+                //TOP LEFT
+                if(col==0){
+                    currentTile->neighbors.push_back(&getTile(row+1,col));
+                    currentTile->neighbors.push_back(&getTile(row+1,col+1));
+                    currentTile->neighbors.push_back(&getTile(row,col+1));
+                }
+                    //TOP RIGHT
+                else if(col==(colCount-1)){
+                    currentTile->neighbors.push_back(&getTile(row,col-1));
+                    currentTile->neighbors.push_back(&getTile(row+1,col));
+                    currentTile->neighbors.push_back(&getTile(row+1,col-1));
+                }
+                    //TOP GENERAL
+                else{
+                    currentTile->neighbors.push_back(&getTile(row,col-1));
+                    currentTile->neighbors.push_back(&getTile(row+1,col-1));
+                    currentTile->neighbors.push_back(&getTile(row+1,col));
+                    currentTile->neighbors.push_back(&getTile(row,col+1));
+                    currentTile->neighbors.push_back(&getTile(row+1,col+1));
+                }
+            }
+                //BOTTOM
+            else if(row==(rowCount-1)){
+                //BOTTOM LEFT
+                if(col==0){
+                    currentTile->neighbors.push_back(&getTile(row-1,col));
+                    currentTile->neighbors.push_back(&getTile(row-1,col+1));
+                    currentTile->neighbors.push_back(&getTile(row,col+1));
+                }
+                    //BOTTOM RIGHT
+                else if(col==(colCount-1)){
+                    currentTile->neighbors.push_back(&getTile(row,col-1));
+                    currentTile->neighbors.push_back(&getTile(row-1,col));
+                    currentTile->neighbors.push_back(&getTile(row-1,col-1));
+                }
+                    //BOTTOM GENERAL
+                else{
+                    currentTile->neighbors.push_back(&getTile(row,col-1));
+                    currentTile->neighbors.push_back(&getTile(row-1,col-1));
+                    currentTile->neighbors.push_back(&getTile(row-1,col));
+                    currentTile->neighbors.push_back(&getTile(row,col+1));
+                    currentTile->neighbors.push_back(&getTile(row-1,col+1));
+                }
+            }
+                //LEFT SIDE
+            else if(col == 0){
+                currentTile->neighbors.push_back(&getTile(row+1,col));
+                currentTile->neighbors.push_back(&getTile(row+1,col+1));
+                currentTile->neighbors.push_back(&getTile(row,col+1));
+                currentTile->neighbors.push_back(&getTile(row-1,col));
+                currentTile->neighbors.push_back(&getTile(row-1,col+1));
+            }
+                //RIGHT SIDE
+            else if(col==(colCount-1)){
+                currentTile->neighbors.push_back(&getTile(row-1,col));
+                currentTile->neighbors.push_back(&getTile(row-1,col-1));
+                currentTile->neighbors.push_back(&getTile(row,col-1));
+                currentTile->neighbors.push_back(&getTile(row+1,col-1));
+                currentTile->neighbors.push_back(&getTile(row+1,col));
+            }
+                //MIDDLES
+            else{
+                currentTile->neighbors.push_back(&getTile(row-1,col-1));
+                currentTile->neighbors.push_back(&getTile(row,col-1));
+                currentTile->neighbors.push_back(&getTile(row+1,col-1));
+                currentTile->neighbors.push_back(&getTile(row-1,col));
+                currentTile->neighbors.push_back(&getTile(row+1,col));
+                currentTile->neighbors.push_back(&getTile(row-1,col+1));
+                currentTile->neighbors.push_back(&getTile(row,col+1));
+                currentTile->neighbors.push_back(&getTile(row+1,col+1));
+            }
+        }
+    }
+    //SET MINES
+    srand(time(0));
+    for(int i=0;i<mineCount;i++){
+        int row = rand()%15;
+        int col = rand()%30;
+        GameWindow::Tile* tile = &getTile(row,col);
+        if(tile->isMine){
+            if(row==0){
+                row=row+1;
+            }
+            else{
+                row = row-1;
+            }
+            tile = &getTile(row,col);
+        }
+        tile->isMine = true;
+    }
+
+    start = chrono::high_resolution_clock::now();
+
+    setupTileNums();
+}
+
+void GameWindow::SetUpTextures() {
+    //SETTING UP NUMBER TEXTURES
+    sf::Texture& zero = textureMap["zero"];
+    zero.loadFromFile("../files/images/digits.png",sf::IntRect(0, 0, 21, 32));
+    sf::Texture& one= textureMap["one"];
+    one.loadFromFile("../files/images/digits.png",sf::IntRect(21, 0, 21, 32));
+    sf::Texture& two= textureMap["two"];
+    two.loadFromFile("../files/images/digits.png",sf::IntRect(42, 0, 21, 32));
+    sf::Texture& three= textureMap["three"];
+    three.loadFromFile("../files/images/digits.png",sf::IntRect(63, 0, 21, 32));
+    sf::Texture& four= textureMap["four"];
+    four.loadFromFile("../files/images/digits.png",sf::IntRect(84, 0, 21, 32));
+    sf::Texture& five= textureMap["five"];
+    five.loadFromFile("../files/images/digits.png",sf::IntRect(105, 0, 21, 32));
+    sf::Texture& six= textureMap["six"];
+    six.loadFromFile("../files/images/digits.png",sf::IntRect(126, 0, 21, 32));
+    sf::Texture& seven= textureMap["seven"];
+    seven.loadFromFile("../files/images/digits.png",sf::IntRect(147, 0, 21, 32));
+    sf::Texture& eight= textureMap["eight"];
+    eight.loadFromFile("../files/images/digits.png",sf::IntRect(168, 0, 21, 32));
+    sf::Texture& nine= textureMap["nine"];
+    nine.loadFromFile("../files/images/digits.png",sf::IntRect(189, 0, 21, 32));
+    sf::Texture& dash= textureMap["dash"];
+    dash.loadFromFile("../files/images/digits.png",sf::IntRect(210, 0, 21, 32));
+
+
+
+    //LOADING REST OF TEXTURES
+    getTexture("../files/images/face_lose.png","face_lose");
+    getTexture("../files/images/face_win.png","face_win");
+    getTexture("../files/images/number_1.png","1");
+    getTexture("../files/images/number_2.png","2");
+    getTexture("../files/images/number_3.png","3");
+    getTexture("../files/images/number_4.png","4");
+    getTexture("../files/images/number_5.png","5");
+    getTexture("../files/images/number_6.png","6");
+    getTexture("../files/images/number_7.png","7");
+    getTexture("../files/images/number_8.png","8");
+    getTexture("../files/images/mine.png","mine");
+    getTexture("../files/images/tile_hidden.png","tile_hidden");
+    getTexture("../files/images/tile_revealed.png","tile_revealed");
+    getTexture("../files/images/flag.png","flag");
+    getTexture("../files/images/pause.png","pause");
+
+}
+
+void GameWindow::debug() {
+    if(!gameWon && ! gameLost){
+        if (debugPressed) {
+            for(int i =0;i<tileVect.size();i++) {
+                //Hide
+                if(tileVect.at(i).isMine){
+                    changeTexture(tileVect.at(i),"tile_hidden");
+                    debugPressed =  false;
+
+                }
+            }
+            return;
+        }
+        else{
+            for(int i =0;i<tileVect.size();i++) {
+                //Hide
+                if(tileVect.at(i).isMine){
+                    changeTexture(tileVect.at(i),"mine");
+                    debugPressed =  true;
+                }
+            }
+        }
+    }
 }

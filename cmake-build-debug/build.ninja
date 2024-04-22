@@ -70,6 +70,13 @@ build CMakeFiles/MineSweeper.dir/src/GameWindow.cpp.obj: CXX_COMPILER__MineSweep
   OBJECT_DIR = CMakeFiles\MineSweeper.dir
   OBJECT_FILE_DIR = CMakeFiles\MineSweeper.dir\src
 
+build CMakeFiles/MineSweeper.dir/src/Leaderboard.cpp.obj: CXX_COMPILER__MineSweeper_unscanned_Debug C$:/Users/Landon$ Agic/CLionProjects/MineSweeper/src/Leaderboard.cpp || cmake_object_order_depends_target_MineSweeper
+  DEP_FILE = CMakeFiles\MineSweeper.dir\src\Leaderboard.cpp.obj.d
+  FLAGS = -g -std=gnu++11 -fdiagnostics-color=always
+  INCLUDES = -isystem C:/SFML/SFML-2.5.1/include
+  OBJECT_DIR = CMakeFiles\MineSweeper.dir
+  OBJECT_FILE_DIR = CMakeFiles\MineSweeper.dir\src
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target MineSweeper
@@ -78,7 +85,7 @@ build CMakeFiles/MineSweeper.dir/src/GameWindow.cpp.obj: CXX_COMPILER__MineSweep
 #############################################
 # Link the executable MineSweeper.exe
 
-build MineSweeper.exe: CXX_EXECUTABLE_LINKER__MineSweeper_Debug CMakeFiles/MineSweeper.dir/main.cpp.obj CMakeFiles/MineSweeper.dir/src/WelcomeWindow.cpp.obj CMakeFiles/MineSweeper.dir/src/GameWindow.cpp.obj | C$:/SFML/SFML-2.5.1/lib/libsfml-graphics-d.a C$:/SFML/SFML-2.5.1/lib/libsfml-audio-d.a C$:/SFML/SFML-2.5.1/lib/libsfml-window-d.a C$:/SFML/SFML-2.5.1/lib/libsfml-system-d.a
+build MineSweeper.exe: CXX_EXECUTABLE_LINKER__MineSweeper_Debug CMakeFiles/MineSweeper.dir/main.cpp.obj CMakeFiles/MineSweeper.dir/src/WelcomeWindow.cpp.obj CMakeFiles/MineSweeper.dir/src/GameWindow.cpp.obj CMakeFiles/MineSweeper.dir/src/Leaderboard.cpp.obj | C$:/SFML/SFML-2.5.1/lib/libsfml-graphics-d.a C$:/SFML/SFML-2.5.1/lib/libsfml-audio-d.a C$:/SFML/SFML-2.5.1/lib/libsfml-window-d.a C$:/SFML/SFML-2.5.1/lib/libsfml-system-d.a
   FLAGS = -g
   LINK_LIBRARIES = C:/SFML/SFML-2.5.1/lib/libsfml-graphics-d.a  C:/SFML/SFML-2.5.1/lib/libsfml-audio-d.a  C:/SFML/SFML-2.5.1/lib/libsfml-window-d.a  C:/SFML/SFML-2.5.1/lib/libsfml-system-d.a  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\MineSweeper.dir

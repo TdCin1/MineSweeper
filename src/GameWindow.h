@@ -4,6 +4,8 @@
 #include <map>
 #include <vector>
 #include <cmath>
+#include <ctime>
+#include <chrono>
 using namespace std;
 
 class GameWindow{
@@ -20,12 +22,20 @@ public:
     };
 
     //VARS
+    std::chrono::high_resolution_clock::time_point start;
+    std::chrono::high_resolution_clock::time_point pause;
+    bool firstRun = true;
+    bool debugPressed = false;
+    int timeFinal;
     int timeChanged = 0;
+    bool isPaused = true;
     bool gameLost = false;
+    bool gameWon = false;
     int rowCount;
     int colCount;
     int mineCount;
     int flagCount;
+    sf::RenderWindow* displayWindow;
     map<string,sf::Texture> textureMap;
     map<string,sf::Sprite> spriteMap;
 
@@ -46,10 +56,19 @@ public:
     void setupTileNums();
     void displayNumber(Tile* tile);
     void flag(Tile* tile);
+    void checkWin();
+    sf::Vector2i getMousePosition();
 
     void setTimeTextures(sf::Sprite& minuteTens, sf::Sprite& minuteOnes, sf::Sprite& secondTens, sf::Sprite& secondsOnes, int time);
     void flagCounter(sf::Sprite& negative, sf::Sprite& hundreds, sf::Sprite& tens, sf::Sprite& ones, int count);
     Tile& getTile(int row, int col);
+    void debug();
+
+    int Time();
+
+    void Reset();
+    void SetUpElements();
+    void SetUpTextures();
 
 private:
     sf::Texture& getTimeTexture(int num);

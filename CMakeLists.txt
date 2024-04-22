@@ -16,5 +16,7 @@ add_executable(MineSweeper main.cpp
         src/WelcomeWindow.h
         src/GameWindow.cpp
         src/GameWindow.h
-        src/GameWindow.h)
+        src/GameWindow.h
+        src/Leaderboard.cpp
+        src/Leaderboard.h)
 target_link_libraries(MineSweeper sfml-system sfml-window sfml-graphics sfml-audio)
